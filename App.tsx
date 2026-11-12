@@ -37,7 +37,7 @@ function FocusScreen() {
   const dialSize = Math.min(width - 48, 340);
 
   const progress = useSharedValue(minutesToProgress(25));
-  const { sessions, add, remove } = useSessions();
+  const { sessions, streakDays, status, add, remove } = useSessions();
 
   const handleComplete = useCallback(
     (minutes: number) => {
@@ -142,7 +142,12 @@ function FocusScreen() {
           paddingBottom: insets.bottom + 24,
         }}
       >
-        <SessionList sessions={sessions} onRemove={remove} />
+        <SessionList
+          sessions={sessions}
+          onRemove={remove}
+          streakDays={streakDays}
+          syncStatus={status}
+        />
       </ScrollView>
     </View>
   );

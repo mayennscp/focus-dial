@@ -7,6 +7,7 @@ import Animated, {
   LinearTransition,
   type SharedValue,
   useAnimatedStyle,
+  ZoomIn,
 } from 'react-native-reanimated';
 
 import { colors } from '../theme';
@@ -20,7 +21,16 @@ export type Session = {
 type Props = {
   sessions: Session[];
   onRemove: (id: string) => void;
+  /** Consecutive days with at least one session, from the API. */
+  streakDays: number;
+  syncStatus: 'loading' | 'online' | 'offline';
 };
+
+const SYNC_LABEL = {
+  loading: 'Connecting…',
+  online: 'Synced',
+  offline: 'Offline · saved on this device only',
+} as const;
 
 const ACTION_WIDTH = 88;
 
@@ -57,7 +67,12 @@ function formatTime(timestamp: number) {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
-export function SessionList({ sessions, onRemove }: Props) {
+export function SessionList({
+  sessions,
+  onRemove,
+  streakDays,
+  syncStatus,
+}: Props) {
   const total = sessions.reduce((sum, s) => sum + s.minutes, 0);
 
   return (
@@ -68,6 +83,28 @@ export function SessionList({ sessions, onRemove }: Props) {
           {total} min · {sessions.length}{' '}
           {sessions.length === 1 ? 'session' : 'sessions'}
         </Text>
+      </View>
+
+      <View style={styles.meta}>
+        {streakDays > 0 ? (
+          <Animated.Text
+            key={streakDays}
+            entering={ZoomIn.springify()}
+            style={styles.streak}
+          >
+            🔥 {streakDays}-day streak
+          </Animated.Text>
+        ) : null}
+        <View style={styles.sync} accessibilityLabel={SYNC_LABEL[syncStatus]}>
+          <View
+            style={[
+              styles.syncDot,
+              syncStatus === 'online' && styles.syncDotOnline,
+              syncStatus === 'offline' && styles.syncDotOffline,
+            ]}
+          />
+          <Text style={styles.syncText}>{SYNC_LABEL[syncStatus]}</Text>
+        </View>
       </View>
 
       {sessions.length === 0 ? (
@@ -119,6 +156,29 @@ const styles = StyleSheet.create({
   },
   title: { color: colors.text, fontSize: 18, fontWeight: '700' },
   total: { color: colors.textDim, fontSize: 14, fontVariant: ['tabular-nums'] },
+  meta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    marginTop: -4,
+  },
+  streak: { color: colors.text, fontSize: 14, fontWeight: '600' },
+  sync: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginLeft: 'auto',
+  },
+  syncDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: colors.textDim,
+  },
+  syncDotOnline: { backgroundColor: '#66E0B4' },
+  syncDotOffline: { backgroundColor: colors.danger },
+  syncText: { color: colors.textDim, fontSize: 12 },
   empty: { color: colors.textDim, fontSize: 14, lineHeight: 20 },
   rowWrapper: { borderRadius: 16, overflow: 'hidden' },
   row: {
