@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -24,8 +24,9 @@ import {
 
 import { Button } from './src/components/Button';
 import { Dial } from './src/components/Dial';
-import { type Session, SessionList } from './src/components/SessionList';
+import { SessionList } from './src/components/SessionList';
 import { useFocusTimer } from './src/hooks/useFocusTimer';
+import { useSessions } from './src/hooks/useSessions';
 import { formatClock, minutesToProgress } from './src/lib/dial';
 import * as haptics from './src/lib/haptics';
 import { colors } from './src/theme';
@@ -36,15 +37,15 @@ function FocusScreen() {
   const dialSize = Math.min(width - 48, 340);
 
   const progress = useSharedValue(minutesToProgress(25));
-  const [sessions, setSessions] = useState<Session[]>([]);
+  const { sessions, add, remove } = useSessions();
 
-  const handleComplete = useCallback((minutes: number) => {
-    haptics.success();
-    setSessions((prev) => [
-      { id: `${Date.now()}`, minutes, finishedAt: Date.now() },
-      ...prev,
-    ]);
-  }, []);
+  const handleComplete = useCallback(
+    (minutes: number) => {
+      haptics.success();
+      add(minutes);
+    },
+    [add]
+  );
 
   const timer = useFocusTimer(progress, handleComplete);
   const { selectMinutes } = timer;
@@ -141,12 +142,7 @@ function FocusScreen() {
           paddingBottom: insets.bottom + 24,
         }}
       >
-        <SessionList
-          sessions={sessions}
-          onRemove={(id) =>
-            setSessions((prev) => prev.filter((s) => s.id !== id))
-          }
-        />
+        <SessionList sessions={sessions} onRemove={remove} />
       </ScrollView>
     </View>
   );
